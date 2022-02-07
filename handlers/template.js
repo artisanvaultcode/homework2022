@@ -40,9 +40,9 @@ exports.create = async (event) => {
       });
 
       if (
-        !!templateQueryResults &&
-        templateQueryResults.Count &&
-        templateQueryResults.Items.length
+          !!templateQueryResults &&
+          templateQueryResults.Count &&
+          templateQueryResults.Items.length
       ) {
         return handleSuccess(templateQueryResults.Items[0]);
       }
@@ -66,13 +66,13 @@ exports.create = async (event) => {
       return handleSuccess(params.Item);
     }
     return handleError(
-      HttpStatus.BAD_REQUEST,
-      `[Template:Create:Error]:${HttpStatus[HttpStatus.BAD_REQUEST]}: ${error}`
+        HttpStatus.BAD_REQUEST,
+        `[Template:Create:Error]:${HttpStatus[HttpStatus.BAD_REQUEST]}: ${error}`
     );
   } catch (error) {
     return handleError(
-      HttpStatus.INTERNAL_SERVER_ERROR,
-      `[Template:Create:Error]: ${error.stack}`
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        `[Template:Create:Error]: ${error.stack}`
     );
   }
 };
@@ -91,10 +91,10 @@ exports.update = async (event) => {
 
     if (!template_id || !user_id) {
       return handleError(
-        HttpStatus.BAD_REQUEST,
-        `[Template:Update:Error]:${
-          HttpStatus[HttpStatus.BAD_REQUEST]
-        }: Invalid Parameter`
+          HttpStatus.BAD_REQUEST,
+          `[Template:Update:Error]:${
+              HttpStatus[HttpStatus.BAD_REQUEST]
+          }: Invalid Parameter`
       );
     }
 
@@ -116,7 +116,7 @@ exports.update = async (event) => {
           template_id,
         },
         UpdateExpression:
-          "set template_message = :message, template_name = :name",
+            "set template_message = :message, template_name = :name",
         ExpressionAttributeValues: {
           ":message": value.template_message,
           ":name": value.template_name,
@@ -135,13 +135,13 @@ exports.update = async (event) => {
       return handleSuccess(result.Attributes);
     }
     return handleError(
-      HttpStatus.BAD_REQUEST,
-      `[Template:Update:Error]:${HttpStatus[HttpStatus.BAD_REQUEST]}: ${error}`
+        HttpStatus.BAD_REQUEST,
+        `[Template:Update:Error]:${HttpStatus[HttpStatus.BAD_REQUEST]}: ${error}`
     );
   } catch (error) {
     return handleError(
-      HttpStatus.INTERNAL_SERVER_ERROR,
-      `[Template:Update:Error]: ${error}`
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        `[Template:Update:Error]: ${error}`
     );
   }
 };
@@ -155,10 +155,10 @@ exports.delete = async (event) => {
 
     if (!template_id || !user_id) {
       return handleError(
-        HttpStatus.BAD_REQUEST,
-        `[Template:Delete:Error]:${
-          HttpStatus[HttpStatus.BAD_REQUEST]
-        }: "Invalid parameter"`
+          HttpStatus.BAD_REQUEST,
+          `[Template:Delete:Error]:${
+              HttpStatus[HttpStatus.BAD_REQUEST]
+          }: "Invalid parameter"`
       );
     }
 
@@ -177,8 +177,8 @@ exports.delete = async (event) => {
     return handleSuccess(true);
   } catch (error) {
     return handleError(
-      HttpStatus.INTERNAL_SERVER_ERROR,
-      `[Template:Delete:Error]: ${error}`
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        `[Template:Delete:Error]: ${error}`
     );
   }
 };
@@ -192,10 +192,10 @@ exports.details = async (event) => {
 
     if (!template_id || !user_id) {
       return handleError(
-        HttpStatus.BAD_REQUEST,
-        `[Template:Details:Error]:${
-          HttpStatus[HttpStatus.BAD_REQUEST]
-        }: "Invalid parameter"`
+          HttpStatus.BAD_REQUEST,
+          `[Template:Details:Error]:${
+              HttpStatus[HttpStatus.BAD_REQUEST]
+          }: "Invalid parameter"`
       );
     }
 
@@ -218,8 +218,8 @@ exports.details = async (event) => {
     return handleSuccess(result.Item);
   } catch (error) {
     return handleError(
-      HttpStatus.INTERNAL_SERVER_ERROR,
-      `[Template:Details:Error]: ${error}`
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        `[Template:Details:Error]: ${error}`
     );
   }
 };
@@ -234,10 +234,10 @@ exports.list = async (event) => {
 
     if (!user_id) {
       return handleError(
-        HttpStatus.BAD_REQUEST,
-        `[Template:List:Error]:${
-          HttpStatus[HttpStatus.BAD_REQUEST]
-        }: Invalid user_id`
+          HttpStatus.BAD_REQUEST,
+          `[Template:List:Error]:${
+              HttpStatus[HttpStatus.BAD_REQUEST]
+          }: Invalid user_id`
       );
     }
 
@@ -256,8 +256,8 @@ exports.list = async (event) => {
     return handleSuccess(result.Items || []);
   } catch (error) {
     return handleError(
-      HttpStatus.INTERNAL_SERVER_ERROR,
-      `[Template:List:Error]: ${error}`
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        `[Template:List:Error]: ${error}`
     );
   }
 };
