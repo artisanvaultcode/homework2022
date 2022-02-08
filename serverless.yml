@@ -4,6 +4,9 @@ custom:
   stage: ${opt:stage, self.provider.stage}
   templatesTableName: Templates
   recipientS3BucketName: whatsapppush-recipient-file-storages
+  messageQueueName: whatsapppush-message-queue-name
+  notificationTaskTableName: NotificationTask
+  statusLogsTableName: StatusLogs
 
 provider:
   name: aws
@@ -24,16 +27,28 @@ provider:
         - dynamodb:DeleteItem
       Resource:
         - "Fn::GetAtt": [TemplatesTable, Arn]
+        - "Fn::GetAtt": [NotificationTaskTable, Arn]
+        - "Fn::GetAtt": [StatusLogsTable, Arn]
     - Effect: "Allow"
       Action:
         - "s3:*"
       Resource:
         - "arn:aws:s3:::*"
+    - Effect: "Allow"
+      Action:
+        - "sqs:*"
+      Resource:
+        - Fn::GetAtt: [WhatsAppMessageQueue, Arn]
 
   # Define environment global to this service
   environment:
     DDB_TEMPLATES_TABLE_NAME: ${self:custom.templatesTableName}
     RECIPIENT_S3_BUCKET_NAME: ${self:custom.recipientS3BucketName}
+    SMS_MESSAGE_QUEUE_URL: ${self:resources.Outputs.WhatsAppMessageQueueURL.Value}
+    DDB_NOTIFICATION_TASK_TABLE_NAME: ${self:custom.notificationTaskTableName}
+    DDB_STATUS_LOGS_TABLE_NAME: ${self:custom.statusLogsTableName}
+    TWILIO_ACCOUNT_SID: EXAMPLEAC45c59c45c50f079f3c9be82
+    TWILIO_AUTH_TOKEN: EXAMPLE3f4055cd0dc612941e8128129
 
 functions:
   CreateTemplates:
@@ -90,6 +105,67 @@ functions:
           path: upload-url/{user_id}
           method: post
           cors: true
+  CreateNotification:
+    handler: handlers/notification.create
+    description: Function to handle business logic to create notification task
+    # HTTP events to trigger CreateNotification lambda function
+    events:
+      - http:
+          path: notification
+          method: post
+          cors: true
+  ListNotifications:
+    handler: handlers/notification.list
+    description: Function to handle business logic to get notification list
+    # HTTP events to trigger ListNotifications lambda function
+    events:
+      - http:
+          path: notification/{user_id}
+          method: get
+          cors: true
+  NotificationProcessor:
+    handler: handlers/notification.process
+    description: Function to handle business logic to process notification task (sending WhatsApp notification)
+    events:
+      - sqs:
+          arn: ${self:resources.Outputs.WhatsAppMessageQueueARN.Value}
+          batchSize: 1
+  MessageStatusCallBack:
+    handler: handlers/notification.statusCallback
+    description: Function to handle business logic to handle real time feedback of WhatsApp message
+    # HTTP events to trigger MessageStatusCallBack lambda function
+    events:
+      - http:
+          path: notification/status
+          method: post
+          cors: true
+  ListStatusLogs:
+    handler: handlers/status.list
+    description: Function to handle business logic to get status logs list
+    # HTTP events to trigger ListStatusLogs lambda function
+    events:
+      - http:
+          path: status/{notification_id}
+          method: get
+          cors: true
+  DetailsStatusLog:
+    handler: handlers/status.details
+    description: Function to handle business logic to get status log details
+    # HTTP events to trigger DetailsStatusLog lambda function
+    events:
+      - http:
+          path: status/{notification_id}/{log_id}
+          method: get
+          cors: true
+  StatusLogSummary:
+    handler: handlers/status.summary
+    description: Function to handle business logic to get status log summary
+    # HTTP events to trigger StatusLogSummary lambda function
+    events:
+      - http:
+          path: status/summary/{notification_id}
+          method: get
+          cors: true
 
 # CloudFormation resource templates for infra which will be used by this service
 resources:
@@ -114,3 +190,51 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: ${self:custom.recipientS3BucketName}
+    WhatsAppMessageQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:custom.messageQueueName}
+    NotificationTaskTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.notificationTaskTableName}
+        AttributeDefinitions:
+          - AttributeName: user_id
+            AttributeType: S
+          - AttributeName: notification_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: user_id
+            KeyType: HASH
+          - AttributeName: notification_id
+            KeyType: RANGE
+        # Set the capacity to auto-scale
+        BillingMode: PAY_PER_REQUEST
+    StatusLogsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.statusLogsTableName}
+        AttributeDefinitions:
+          - AttributeName: notification_id
+            AttributeType: S
+          - AttributeName: log_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: notification_id
+            KeyType: HASH
+          - AttributeName: log_id
+            KeyType: RANGE
+        # Set the capacity to auto-scale
+        BillingMode: PAY_PER_REQUEST
+
+  Outputs:
+    WhatsAppMessageQueueURL:
+      Description: WhatsAppMessageQueue URL
+      Value:
+        Ref: WhatsAppMessageQueue
+    WhatsAppMessageQueueARN:
+      Description: The ARN of the WhatsAppMessageQueue
+      Value:
+        Fn::GetAtt:
+          - WhatsAppMessageQueue
+          - Arn
